@@ -1,0 +1,40 @@
+<html>
+  <head>
+    <title>Test WS</title>
+    <script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.2.0/knockout-min.js"></script>
+    <script type="text/javascript">
+      $(function () {
+        var ws = new WebSocket('ws://' + window.location.host + window.location.pathname + '/ws');
+        var WS_SESSION_ID = null;
+        var bids = ko.observableArray();
+
+        ws.onmessage = function (event) {
+          if (WS_SESSION_ID === null) WS_SESSION_ID = event.data;
+          else {
+            var message = event.data.split(':', 2);
+            bids.push({productId: message[0], price: message[1]});
+          }
+        };
+
+        ko.applyBindings({
+          bids: bids,
+          productId: ko.observable(''),
+          placeBid: function () {
+            $.post('api/bid/place', {
+              productId: this.productId(),
+              userId: WS_SESSION_ID
+            });
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <button data-bind="click: placeBid">Place Bid</button>
+    <input data-bind="value: productId" type="text">
+    <ul data-bind="foreach: bids">
+      <li>Product ID: <span data-bind="text: productId"></span> has new price - <span data-bind="text: price"></span></li>
+    </ul>
+  </body>
+</html>
